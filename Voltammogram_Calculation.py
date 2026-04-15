@@ -3,24 +3,37 @@ from scipy.special import gamma
 import matplotlib.pyplot as plt  
 import pandas as pd
 
-# Define Grünwald–Letnikov fractional derivative function for evenly spaced data
-def gl_fractional_derivative(x, y, alpha=0.5):
+# Define Grünwald–Letnikov fractional derivative function for evenly spaced data. This function returns
+# an array with the values of the fractional derivative. It also works for fractional integrals.
 
+def gl_fractional_derivative(x, y, alpha=0.5): # X is the variable and Y is the discrete function to be analyzed. 
+                                               # Alpha is the order of the operation, and, if a value is not given 
+                                               # when the function is used, a semi-derivative (alpha = 0.5) will be calculated.
+
+    # Turn the X and Y vectors of data into a Numpy array (if they are not already np arrays)
     x = np.array(x)
     y = np.array(y)
+    # Calculate the step in the X array
     h = x[1] - x[0]
+    # Check if the values in the X array are evenly spaced
     if not np.allclose(np.diff(x), h):
         raise ValueError("X values must be evenly spaced.")
 
+    # Define n as the length of the X array
     n = len(x)
+    # Create an n-sized array for the coefficients that will be calculated. They will be placed in the array later
     coeffs = np.zeros(n)
-    coeffs[0] = 1.0 # Binomial coefficient for k=0
+    
+    # Binomial coefficient for k=0
+    coeffs[0] = 1.0
     # Compute binomial coefficient for order alpha
     for k in range(1, n):
         coeffs[k] = coeffs[k-1] * (alpha - k + 1) / k
     
-    # Calculate sum
+
+    # Create an n-sized array for the calculated fractional derivative. They will be placed in the array later
     gl_frac_derv = np.zeros(n)
+    # Calculate sum
     for i in range(n):
         s = 0.0
         for k in range(i + 1):
@@ -30,24 +43,33 @@ def gl_fractional_derivative(x, y, alpha=0.5):
     return gl_frac_derv
 
 # Define Riemann-Liouville fractional derivative function for evenly spaced data.
-def rl_fractional_derivative(x, y, alpha=0.5):
-   
+def rl_fractional_derivative(x, y, alpha=0.5): # X is the variable and Y is the discrete function to be analyzed. 
+                                               # Alpha is the order of the operation, and, if a value is not given 
+                                               # when the function is used, a semi-derivative (alpha = 0.5) will be calculated.
+
+    # Turn the X and Y vectors of data into a Numpy array (if they are not already np arrays)
     x = np.array(x)
     y = np.array(y)
+    # Calculate the step in the X array
     h = x[1] - x[0]
+    # Check if the values in the X array are evenly spaced
     if not np.allclose(np.diff(x), h):
         raise ValueError("X values must be evenly spaced.")
-
+        
+    # Define n as the length of the X array
     n = len(x)
-    # Approximate the integral for each x_j
+    
+    # Create an n-sized array for the calculated integral term. They will be placed in the array later
     I = np.zeros(n)
+
+    # Approximate the integral using rectangular integration
     for j in range(n):
         s = 0
         for k in range(j + 1):
             s += y[k] * (x[j] - x[k])**(alpha-1) if j != k else 0
         I[j] =  s * h / gamma(alpha)
 
-    # Differentiate I(x) using central differences
+    # Differentiate I using central differences
     rl_frac_deriv = np.gradient(I, h)
     return rl_frac_deriv
 
