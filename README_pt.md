@@ -2,6 +2,8 @@
 
 Cálculo numérico de derivadas fracionárias (ordem 1/2) por métodos baseados na definição de **Grünwald–Letnikov** e **Riemann–Liouville**, aplicado ao perfil de concentração de superfície em voltametria reversível.
 
+***Nota Importante:** Nós recomendamos fortemente o uso de **`gl_fractional_derivative`** e não de **`rl_fractional_derivative`** para qualquer aplicação que não seja estritamente didática!*
+
 > Código suplementar ao artigo: *Understanding the Mathematics of Voltammetry: A Step-by-Step Guide* — Chioquetti, Vital & Serrano, IQ-USP (2026).
 
 ---
