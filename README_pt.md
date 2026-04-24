@@ -1,6 +1,6 @@
 # Semi-Derivadas em Voltametria — Implementação Numérica
 
-Cálculo numérico de derivadas fracionárias (ordem 1/2) pelos métodos de **Grünwald–Letnikov** e **Riemann–Liouville**, aplicado ao perfil de concentração de superfície em voltametria reversível.
+Cálculo numérico de derivadas fracionárias (ordem 1/2) por métodos baseados na definição de **Grünwald–Letnikov** e **Riemann–Liouville**, aplicado ao perfil de concentração de superfície em voltametria reversível.
 
 > Código suplementar ao artigo: *Understanding the Mathematics of Voltammetry: A Step-by-Step Guide* — Chioquetti, Vital & Serrano, IQ-USP (2026).
 
@@ -8,8 +8,9 @@ Cálculo numérico de derivadas fracionárias (ordem 1/2) pelos métodos de **Gr
 
 ## Dependências
 
+É necessário instalar alguns pacotes do Python utilizando 'pip':
 ```bash
-pip install numpy scipy matplotlib
+pip install numpy scipy matplotlib pandas
 ```
 
 | Pacote | Versão mínima | Uso |
@@ -18,7 +19,7 @@ pip install numpy scipy matplotlib
 | `scipy` | 1.7 | Função Gamma (`scipy.special.gamma`) |
 | `matplotlib` | 3.4 | Geração dos gráficos |
 
-> `pandas` está importado no script mas não é utilizado — pode ser removido sem impacto.
+> `pandas` está importado no script mas não é utilizado na forma atual. É necessário para importar dados experimentais ou outros dados discretos sobre os quais se pretenda aplicar os operadores fracionários.
 
 ---
 
@@ -28,7 +29,7 @@ pip install numpy scipy matplotlib
 python voltammetry_semiderivative.py
 ```
 
-Uma janela do matplotlib será aberta com dois painéis: o perfil sigmoidal e as semi-derivadas calculadas pelos dois métodos.
+Uma janela do matplotlib será aberta com dois painéis: o perfil sigmoidal e suas semi-derivadas calculadas pelos dois métodos. A depender do número de pontos utilizados para calcular a sigmoidal, os cálculos podem demorar alguns minutos até sua conclusão.
 
 ---
 
@@ -42,8 +43,8 @@ Derivada fracionária de ordem `alpha` pelo método de **Grünwald–Letnikov**.
 
 | Nome | Tipo | Descrição |
 |------|------|-----------|
-| `x` | array-like | Variável independente. **Deve ser igualmente espaçada.** |
-| `y` | array-like | Valores da função a diferenciar. |
+| `x` | numpy array | Variável independente. **Deve ser igualmente espaçada.** |
+| `y` | numpy array | Valores da função a diferenciar. |
 | `alpha` | float | Ordem da operação. `alpha=0.5` → semi-derivada. `alpha=-0.5` → semi-integral. Padrão: `0.5`. |
 
 **Retorno:** `np.ndarray` com os valores da derivada fracionária, mesmo comprimento que `x` e `y`.
@@ -72,21 +73,20 @@ coeffs[0] = 1.0
 coeffs[k] = coeffs[k-1] * (alpha - k + 1) / k
 ```
 
-> **Atenção:** complexidade $O(n^2)$. Para séries com mais de ~50.000 pontos, considere vetorizar a soma interna com `numpy` ou usar FFT.
 
 ---
 
 ### `rl_fractional_derivative(x, y, alpha=0.5)`
 
-Derivada fracionária de ordem `alpha` pelo método de **Riemann–Liouville**.
+Derivada fracionária de ordem `alpha` por integração retangular baseado na definição de **Riemann–Liouville**.
 
 **Parâmetros**
 
 | Nome | Tipo | Descrição |
 |------|------|-----------|
-| `x` | array-like | Variável independente. **Deve ser igualmente espaçada.** |
-| `y` | array-like | Valores da função a diferenciar. |
-| `alpha` | float | Ordem da operação. Padrão: `0.5`. |
+| `x` | numpy array | Variável independente. **Deve ser igualmente espaçada.** |
+| `y` | numpy array | Valores da função a diferenciar. |
+| `alpha` | float | Ordem da operação. 0 > alpha > 1 Padrão: `0.5`. |
 
 **Retorno:** `np.ndarray` com os valores da derivada fracionária.
 
@@ -100,7 +100,7 @@ dy_half_rl = rl_fractional_derivative(x, y, alpha=0.5)
 
 **Funcionamento interno**
 
-Primeiro calcula a integral fracionária (quadratura retangular), depois diferencia com `np.gradient`:
+Primeiro calcula a integral fracionária de ordem 1-alpha (por integração retangular), depois diferencia com `np.gradient`:
 
 ```python
 # Integral fracionária
@@ -110,7 +110,7 @@ I[j] = (h / gamma(alpha)) * sum(y[k] * (x[j] - x[k])**(alpha-1) for k != j)
 rl_frac_deriv = np.gradient(I, h)
 ```
 
-> O termo `k == j` é excluído porque o integrando $(x_j - x_k)^{\alpha-1}$ é singular em $k = j$ para $\alpha < 1$.
+> O termo `k == j` é excluído porque o integrando $(x_j - x_k)^{\alpha-1}$ é singular em $k = j$ para $\alpha < 1$. Outros métodos baseados na definição de Riemann-Liouville resolvem elegantemente esse problema (ver capítulo 8.2 de Fractional Calculus, livro de Oldham e Spanier).
 
 ---
 
@@ -149,30 +149,21 @@ O script produz uma figura com dois painéis:
 
 **Painel esquerdo — Perfil de concentração**
 - Curva sigmoidal $f(\theta) = 1/(1+e^\theta)$ em função de $\theta$
-- Representa a concentração normalizada de Ox na superfície do eletrodo
+
 
 **Painel direito — Semi-derivadas (perfil de corrente)**
 - $-d^{1/2}f / d(at)^{1/2}$ em função de $\theta$
-- Duas curvas sobrepostas: GL (tracejada) e RL (tracejada)
+- Duas curvas sobrepostas: GL (tracejada, azul) e RL (tracejada, laranja)
 - Representa o voltamograma adimensional: pico em $\theta \approx -1.11$, altura $\approx -0.446$
 
-As curvas GL e RL devem coincidir — qualquer divergência expressiva indica problema numérico (espaçamento irregular, `alpha` fora de [0,1], série muito curta).
+Divergências expressivas ente RL e GL indicam problema numérico (espaçamento irregular, `alpha` fora de [0,1] para RL, série muito curta).
 
 ---
 
 ## Adaptando para Seus Dados
 
-Para aplicar as funções a dados próprios, substitua `x` e `y` pelos seus vetores (igualmente espaçados):
+Para aplicar as funções a dados próprios, substitua `x` e `y` pelos seus vetores de potencial e corrente (igualmente espaçados):
 
-```python
-import numpy as np
-
-# Seus dados experimentais ou simulados
-E = np.linspace(-0.5, 0.5, 5000)   # potencial [V]
-concentration_profile = ...         # C(E) normalizada
-
-semi_deriv = gl_fractional_derivative(E, concentration_profile, alpha=0.5)
-```
 
 Para calcular a semi-integral (ordem $-1/2$), passe `alpha=-0.5`:
 
@@ -185,9 +176,9 @@ semi_integral = gl_fractional_derivative(E, current_data, alpha=-0.5)
 ## Limitações Conhecidas
 
 - **Espaçamento irregular:** ambas as funções lançam `ValueError`. Interpole antes com `np.interp` ou `scipy.interpolate`.
-- **Efeito de borda (GL):** os primeiros ~10–20 pontos têm menor precisão por memória fracionária insuficiente.
-- **Singularidade (RL):** a exclusão do ponto $k = j$ introduz erro crescente para `alpha` próximo de 0. Para `alpha = 0.5` o erro é aceitável para visualização.
-- **`alpha` fora de (0, 1):** o código aceita qualquer valor real, mas resultados para `alpha > 1` ou `alpha < 0` não foram validados neste contexto.
+- **Efeito de borda (GL):** os primeiros 10–20 pontos têm menor precisão por memória fracionária insuficiente.
+- **Singularidade (RL):** a exclusão do ponto $k = j$ introduz erro crescente para `alpha` próximo de 0. Para `alpha = 0.5` o erro é visto na Figura S1 do artigo original.
+- **`alpha` fora de (0, 1), para RL:** o código aceita qualquer valor real, mas resultados para `alpha > 1` ou `alpha < 0` não funcionam para a definição RL devido à maneira como o método é implementado.
 
 ---
 
