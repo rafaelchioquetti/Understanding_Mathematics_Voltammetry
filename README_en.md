@@ -1,12 +1,15 @@
 # Fractional Semi-Derivatives in Voltammetry — Numerical Implementation
 
-Numerical computation of fractional derivatives (order 1/2) using the **Grünwald–Letnikov** and **Riemann–Liouville** methods, applied to the surface concentration profile of a reversible voltammetric system.
+Numerical computation of fractional derivatives (order 1/2) based on the definitions of **Grünwald–Letnikov** and **Riemann–Liouville** methods, applied to the surface concentration profile of a reversible voltammetric system.
+
+***Important Note:** We strongly recommend the use of the function **`gl_fractional_derivative`** over **`rl_fractional_derivative`** for any use that goes beyond didatic purposes!*
 
 > Supplementary code for: *Understanding the Mathematics of Voltammetry: A Step-by-Step Guide* — Chioquetti, Vital & Serrano, IQ-USP (2026).
 
 ---
 
 ## Dependencies
+For the code to run properly, it is necessary to install some Python packages using 'pip':
 
 ```bash
 pip install numpy scipy matplotlib
@@ -18,7 +21,7 @@ pip install numpy scipy matplotlib
 | `scipy` | 1.7 | Gamma function (`scipy.special.gamma`) |
 | `matplotlib` | 3.4 | Plot generation |
 
-> `pandas` is imported in the script but not used — it can be safely removed.
+> `pandas` is imported in the script but not used in the current form. However, it is necessary if the user wants to apply the fractional operators to their own experimental (or other discrete) data.
 
 ---
 
@@ -28,7 +31,7 @@ pip install numpy scipy matplotlib
 python voltammetry_semiderivative.py
 ```
 
-A matplotlib window will open showing two panels: the sigmoidal concentration profile and the semi-derivatives computed by both methods.
+A matplotlib window will open showing two panels: the sigmoidal profile and their semi-derivatives computed by both methods.
 
 ---
 
@@ -42,8 +45,8 @@ Fractional derivative of order `alpha` using the **Grünwald–Letnikov** method
 
 | Name | Type | Description |
 |------|------|-------------|
-| `x` | array-like | Independent variable. **Must be evenly spaced.** |
-| `y` | array-like | Function values to differentiate. |
+| `x` | numpy array | Independent variable. **Must be evenly spaced.** |
+| `y` | numpy array | Function values to differentiate. |
 | `alpha` | float | Order of the operation. `alpha=0.5` → semi-derivative. `alpha=-0.5` → semi-integral. Default: `0.5`. |
 
 **Returns:** `np.ndarray` with fractional derivative values, same length as `x` and `y`.
@@ -72,21 +75,20 @@ coeffs[0] = 1.0
 coeffs[k] = coeffs[k-1] * (alpha - k + 1) / k
 ```
 
-> **Performance note:** $O(n^2)$ complexity. For series longer than ~50,000 points, consider vectorizing the inner sum with `numpy` or using an FFT-based approach.
 
 ---
 
 ### `rl_fractional_derivative(x, y, alpha=0.5)`
 
-Fractional derivative of order `alpha` using the **Riemann–Liouville** method.
+Fractional derivative of order `alpha` using rectangular integration based on the **Riemann–Liouville** definition.
 
 **Parameters**
 
 | Name | Type | Description |
 |------|------|-------------|
-| `x` | array-like | Independent variable. **Must be evenly spaced.** |
-| `y` | array-like | Function values to differentiate. |
-| `alpha` | float | Order of the operation. Default: `0.5`. |
+| `x` | numpy array | Independent variable. **Must be evenly spaced.** |
+| `y` | numpy array | Function values to differentiate. |
+| `alpha` | float | Order of the operation. 0 < alpha < 1. Default: `0.5`. |
 
 **Returns:** `np.ndarray` with fractional derivative values.
 
@@ -100,7 +102,7 @@ dy_half_rl = rl_fractional_derivative(x, y, alpha=0.5)
 
 **How it works**
 
-First computes the fractional integral (rectangular quadrature), then differentiates with `np.gradient`:
+First computes the fractional integral of order 1-alpha (using rectangular integration), then differentiates with `np.gradient`:
 
 ```python
 # Fractional integral
@@ -110,7 +112,9 @@ I[j] = (h / gamma(alpha)) * sum(y[k] * (x[j] - x[k])**(alpha-1) for k != j)
 rl_frac_deriv = np.gradient(I, h)
 ```
 
-> The `k == j` term is excluded because the integrand $(x_j - x_k)^{\alpha-1}$ is singular at $k = j$ for $\alpha < 1$.
+> The `k == j` term is excluded because the integrand $(x_j - x_k)^{\alpha-1}$ is singular at $k = j$ for $\alpha < 1$. Other methods based on the Riemann-Liouville definition can elegantly solve this problem (see chapter 8.2 of the book Fractional Calculus, by Oldham and Spanier).
+
+
 
 ---
 
@@ -149,14 +153,14 @@ The script produces a figure with two panels:
 
 **Left panel — Concentration profile**
 - Sigmoidal curve $f(\theta) = 1/(1+e^\theta)$ as a function of $\theta$
-- Represents the normalized surface concentration of Ox at the electrode
 
 **Right panel — Semi-derivatives (current profile)**
 - $-d^{1/2}f / d(at)^{1/2}$ as a function of $\theta$
-- Two overlapping dashed curves: GL and RL
+- Two overlapping dashed curves: GL (blue) and RL (orange)
 - Represents the dimensionless voltammogram: peak at $\theta \approx -1.11$, height $\approx -0.446$
 
-The GL and RL curves should overlap — any significant divergence points to a numerical issue (uneven spacing, `alpha` outside [0,1], or too short a series).
+Significative divergences between RL and GL indicate numerical problems (alpha not in (0,1) or too short series of numbers.
+
 
 ---
 
@@ -187,7 +191,7 @@ semi_integral = gl_fractional_derivative(E, current_data, alpha=-0.5)
 - **Uneven spacing:** both functions raise `ValueError`. Interpolate first using `np.interp` or `scipy.interpolate`.
 - **Edge effect (GL):** the first ~10–20 points have lower accuracy due to insufficient fractional memory.
 - **Singularity (RL):** excluding the `k == j` point introduces growing error as `alpha` approaches 0. For `alpha = 0.5`, the error is acceptable for visualization purposes.
-- **`alpha` outside (0, 1):** the code accepts any real value, but results for `alpha > 1` or `alpha < 0` have not been validated in this context.
+- **`alpha` outside (0, 1), for RL:** the code accepts any real value, but results for `alpha > 1` or `alpha < 0` are not valid in the form the RL algorithm was implemented.
 
 ---
 
