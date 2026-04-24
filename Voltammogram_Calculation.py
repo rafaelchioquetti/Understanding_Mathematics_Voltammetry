@@ -66,8 +66,8 @@ def rl_fractional_derivative(x, y, alpha=0.5): # X is the variable and Y is the 
     for j in range(n):
         s = 0
         for k in range(j + 1):
-            s += y[k] * (x[j] - x[k])**(alpha-1) if j != k else 0
-        I[j] =  s * h / gamma(alpha)
+            s += y[k] * (x[j] - x[k])**(-alpha) if j != k else 0
+        I[j] =  s * h / gamma(1-alpha)
 
     # Differentiate I using central differences
     rl_frac_deriv = np.gradient(I, h)
