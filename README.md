@@ -4,7 +4,7 @@ Numerical computation of fractional derivatives (order 1/2) based on the definit
 
 ***Important Note:** We strongly recommend the use of the function **`gl_fractional_derivative`** over **`rl_fractional_derivative`** for any use that goes beyond didatic purposes!*
 
-> Supplementary code for: *Understanding the Mathematics of Voltammetry: A Step-by-Step Guide* — Chioquetti, Vital & Serrano, IQ-USP (2026).
+> Supplementary code for: *Understanding the Mathematics of Voltammetry: A Step-by-Step Guide* — Rafael A.L. Chioquetti, João V. S. Vital & Silvia H. P. Serrano, ChemTexts (2026) https://doi.org/10.1007/s40828-026-00224-y.
 
 ---
 
