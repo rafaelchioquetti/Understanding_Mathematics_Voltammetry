@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-#Supplemetary code for Understanding the Mathematics of Voltammetry: A Step-by-Step Guide — Rafael A.L. Chioquetti, 
+# Supplemetary code for Understanding the Mathematics of Voltammetry: A Step-by-Step Guide — Rafael A.L. Chioquetti, 
 # João V. S. Vital & Silvia H. P. Serrano, ChemTexts (2026) https://doi.org/10.1007/s40828-026-00224-y.
 
 # Define Grünwald–Letnikov fractional derivative function for evenly spaced data. This function returns
